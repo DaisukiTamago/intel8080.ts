@@ -1,0 +1,16 @@
+{
+  "name": "8080.js",
+  "version": "1.0.0",
+  "description": "A intel 8080 CPU emulator written with typescript for absolutelly no reason",
+  "main": "index.js",
+  "author": "DaisukiTamago <gustavoalvez820@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "disassemble": "ts-node ./src/modules/disassembler/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.2.5",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
+  }
+}
