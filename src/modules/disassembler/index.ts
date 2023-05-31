@@ -35,7 +35,7 @@ class Disassembler {
                 instructionSpacesPadding -= 3;
             }
 
-            const instructionAddress = String(this.programCounter).padStart(4, '0')
+            const instructionAddress = this.programCounter.toString(16).padStart(4, '0')
             const instructionData = dataBytes.map(value => value.toString(16).padStart(2, '0'))
             const instructionCode = opcode.code.toString(16).padStart(2, '0').concat(" ".repeat(instructionSpacesPadding))
 
@@ -50,10 +50,8 @@ class Disassembler {
             instruction = this.rom[this.programCounter]
         }
 
-        if (instruction === undefined) {
-            await writeFile(`${this.filePath}.asm`, disassembledInstructions.join("\n"))
-            return;
-        }
+        await writeFile(`${this.filePath}.asm`, disassembledInstructions.join("\n"))
+        return;        
     }
 }
 
