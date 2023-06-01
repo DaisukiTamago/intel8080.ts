@@ -6,7 +6,8 @@
   "author": "DaisukiTamago <gustavoalvez820@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "disassemble": "ts-node ./src/modules/disassembler/index.ts"
+    "disassemble": "ts-node ./src/modules/disassembler/index.ts",
+    "execute": "ts-node ./src/index.ts"
   },
   "devDependencies": {
     "@types/node": "^20.2.5",
