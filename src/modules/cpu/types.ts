@@ -9,11 +9,11 @@ export interface CPUState {
 export type RegisterPair = "B" | "D" | "H" | "PSW"
 
 export enum Register {
-    B = 'B',
-    C = 'C',
-    D = 'D',
-    E = 'E',
-    H = 'H',
-    L = 'L',
-    A = 'A',
+    B = "B",
+    C = "C",
+    D = "D",
+    E = "E",
+    H = "H",
+    L = "L",
+    A = "A",
   }
