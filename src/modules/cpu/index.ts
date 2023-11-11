@@ -2,7 +2,7 @@ import { readFile } from "fs/promises"
 import { Translator } from "../translator"
 import { Opcode } from "../translator/types"
 import { CPUState, Register } from "./types"
-import { getBitsFromNumber, getRegisterPairValue, getRegisterValue, setValueIntoRegisterPair } from "./helpers"
+import { executeOpcode } from "./executor"
 
 // for reference https://en.wikipedia.org/wiki/Intel_8080
 export class CPU {
@@ -67,96 +67,7 @@ export class CPU {
 	}
 
 	private static executeInstruction(opcode: Opcode, originalState: CPUState): CPUState {
-		console.log(`ADDRESS: ${originalState.programCounter.toString(16)} CODE: $${opcode.code.toString(16)} OPERANDS: ${opcode.operands?.join(" ")} INSTRUCTION: ${opcode.instruction}}`)
-		const newState: CPUState = { ...originalState }
-
-		switch (opcode.code) {
-		case 0x00: 
-			return newState
-
-		case 0x06:  {
-			newState.registers.set("B", Translator.getOpcodeSingleOperand(opcode))
-
-			return newState
-		}
-
-		case 0x11: { // LXI D,D16
-			return setValueIntoRegisterPair("D", [opcode.operands![1], opcode.operands![0]], newState)
-		}
-
-		case 0x1A: { // LDAX D
-			const memoryAddress = getRegisterPairValue(Register.D, newState)
-			const value = newState.memory[memoryAddress]
-
-			newState.registers.set(Register.A, value)
-			return newState
-		}
-
-		case 0x21: { // LXI H,D16
-			return setValueIntoRegisterPair("H", [opcode.operands![1], opcode.operands![0]], newState)
-		}
-
-		case 0x23: { // INX H = HL <- HL + 1
-			const pairValue = getRegisterPairValue("H", newState)
-			return setValueIntoRegisterPair("H", pairValue + 1, newState)
-		}
-
-		case 0x77: { // MOV M,A = (HL) <- A
-			const accumulatorRegisterValue = getRegisterValue(Register.A, newState) 
-			const targetMemoryAddress = getRegisterPairValue("H", newState)
-
-			newState.memory[targetMemoryAddress] = accumulatorRegisterValue
-
-			return newState
-		}
-
-		case 0xc3: {// JMP Addr
-
-			const jumpAddress = Translator.getOpcodeOperandsAsAddress(opcode)
-            
-			newState.programCounter = jumpAddress
-            
-			return newState
-		}
-
-		case 0xCD: { // CALL address
-			const returnAddress = newState.memory[newState.programCounter] + opcode.size // address of next instruction
-
-			// saves the return addres into the stackpointer memory
-			newState.memory[newState.stackPointer - 1] = getBitsFromNumber(8, returnAddress, "MSB") // leftmost address byte
-			newState.memory[newState.stackPointer - 2] = getBitsFromNumber(8, returnAddress, "LSB") // rightmost address btye
-
-			const subroutineAddress = Translator.getOpcodeOperandsAsAddress(opcode)
-
-			newState.programCounter = subroutineAddress // program now will execute the routine
-			newState.stackPointer -= 2 // before jumping into the subroutine, sets the stackpointer to the return address
-            
-			return newState
-		}
-
-		case 0x31: {
-			const routineAddress = Translator.getOpcodeOperandsAsAddress(opcode)
-
-			newState.stackPointer = routineAddress
-
-			return newState
-		}
-
-		case 0x13: { // INX D = DE <- DE + 1
-			const pairValue = getRegisterPairValue(Register.D , newState)
-
-			return setValueIntoRegisterPair("D", pairValue + 1, newState)
-		}
-
-		// case 0x05:  {// DCR B = B <- B - 1
-		// 	const registerValue = getRegisterValue(Register.B, newState)
-                
-		// 	return newState
-		// }
-
-		default:
-			throw Error(`Opcode not implemented: CODE: $${opcode.code.toString(16)} OPERANDS: ${opcode.operands?.join(" ")} INSTRUCTION: ${opcode.instruction}}`)
-		}
+		return executeOpcode(opcode, originalState)
 	}
 
 	private static setCPUState(newState: CPUState): void {
