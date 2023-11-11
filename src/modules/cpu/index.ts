@@ -1,7 +1,8 @@
 import { readFile } from "fs/promises";
 import { Translator } from "../translator";
 import { Opcode } from "../translator/types";
-import { CpuState, Register, RegisterPair } from "./types";
+import { CPUState, Register, RegisterPair } from "./types";
+import { getBitsFromNumber, getConcatenedBytes, getRegisterPairValue, getRegisterValue, setValueIntoRegisterPair } from "./helpers";
 
 // for reference https://en.wikipedia.org/wiki/Intel_8080
 export class CPU {
@@ -42,13 +43,16 @@ export class CPU {
 
     private static executeCycle(): void {
         const currentInstruction = this.fetch();
+        const { programCounter, stackPointer, registers, flags, rom } = this;
+
+        if (!rom) throw Error("ROM not loaded")
 
         const newState = this.executeInstruction(currentInstruction, {
-            programCounter: this.programCounter,
-            stackPointer: this.stackPointer,
-            registers: this.registers,
-            flags: this.flags,
-            memory: this.rom!,
+            programCounter,
+            stackPointer,
+            registers,
+            flags,
+            memory: rom,
         });
 
         // If the executed instruction did not changed the program counter, we add the actual instruction size to it
@@ -62,9 +66,9 @@ export class CPU {
         return Translator.decode(this.rom![this.programCounter], this.programCounter,this.rom!);
     }
 
-    private static executeInstruction(opcode: Opcode, originalState: CpuState): CpuState {
+    private static executeInstruction(opcode: Opcode, originalState: CPUState): CPUState {
         console.log(`ADDRESS: ${originalState.programCounter.toString(16)} CODE: $${opcode.code.toString(16)} OPERANDS: ${opcode.operands?.join(" ")} INSTRUCTION: ${opcode.instruction}}`)
-        const newState: CpuState = { ...originalState }
+        const newState: CPUState = { ...originalState }
 
         switch (opcode.code) {
             case 0x00: 
@@ -77,11 +81,11 @@ export class CPU {
             }
 
             case 0x11: { // LXI D,D16
-                return this.setValueIntoRegisterPair("D", [opcode.operands![1], opcode.operands![0]], newState)
+                return setValueIntoRegisterPair("D", [opcode.operands![1], opcode.operands![0]], newState)
             }
 
             case 0x1A: { // LDAX D
-                const memoryAddress = this.getRegisterPairValue(Register.D, newState)
+                const memoryAddress = getRegisterPairValue(Register.D, newState)
                 const value = newState.memory[memoryAddress]
 
                 newState.registers.set(Register.A, value)
@@ -89,11 +93,21 @@ export class CPU {
             }
 
             case 0x21: { // LXI H,D16
-                return this.setValueIntoRegisterPair("H", [opcode.operands![1], opcode.operands![0]], newState)
+                return setValueIntoRegisterPair("H", [opcode.operands![1], opcode.operands![0]], newState)
             }
 
-            case 0x77: { // MOV M,A
-                return this.setValueIntoRegisterPair("H", [opcode.operands![1], opcode.operands![0]], newState)
+            case 0x23: { // INX H = HL <- HL + 1
+                const pairValue = getRegisterPairValue("H", newState);
+                return setValueIntoRegisterPair("H", pairValue + 1, newState)
+            }
+
+            case 0x77: { // MOV M,A = (HL) <- A
+                const accumulatorRegisterValue = getRegisterValue(Register.A, newState); 
+                const targetMemoryAddress = getRegisterPairValue("H", newState)
+
+                newState.memory[targetMemoryAddress] = accumulatorRegisterValue
+
+                return newState
             }
 
             case 0xc3: // JMP Addr
@@ -107,8 +121,8 @@ export class CPU {
                 const returnAddress = newState.memory[newState.programCounter] + opcode.size // address of next instruction
 
                 // saves the return addres into the stackpointer memory
-                newState.memory[newState.stackPointer - 1] = this.getBitsFromNumber(8, returnAddress, "MSB") // leftmost address byte
-                newState.memory[newState.stackPointer - 2] = this.getBitsFromNumber(8, returnAddress, "LSB") // rightmost address btye
+                newState.memory[newState.stackPointer - 1] = getBitsFromNumber(8, returnAddress, "MSB") // leftmost address byte
+                newState.memory[newState.stackPointer - 2] = getBitsFromNumber(8, returnAddress, "LSB") // rightmost address btye
 
                 const subroutineAddress = Translator.getOpcodeOperandsAsAddress(opcode);
 
@@ -123,80 +137,25 @@ export class CPU {
                 newState.stackPointer = routineAddress;
 
                 return newState;
-        
+
+            case 0x13:  // INX D = DE <- DE + 1
+                const pairValue = getRegisterPairValue(Register.D , newState);
+
+                return setValueIntoRegisterPair("D", pairValue + 1, newState);
+
+            case 0x05:  // DCR B = B <- B - 1
+                const registerValue = getRegisterValue(Register.B, newState);
+                
+                return newState;
+
             default:
                 throw Error(`Opcode not implemented: CODE: $${opcode.code.toString(16)} OPERANDS: ${opcode.operands?.join(" ")} INSTRUCTION: ${opcode.instruction}}`)
         }
     }
 
-    private static setValueIntoRegisterPair(pairSpecifier: RegisterPair, pairValues: [firstRegister: number, secondRegister: number], originalState: CpuState) {
-        const newState = { ...originalState }
-
-        switch (pairSpecifier) {
-            case "B":
-                newState.registers.set("B", pairValues[0])
-                newState.registers.set("C", pairValues[1])
-                return newState
-
-            case "D":
-                newState.registers.set("D", pairValues[0])
-                newState.registers.set("E", pairValues[1])
-                return newState
-
-            case "H":
-                newState.registers.set("H", pairValues[0])
-                newState.registers.set("L", pairValues[1])
-                return newState
-        
-            default:
-                throw Error("Accessing undefined register pair")
-        }
-    }
-
-    private static getRegisterPairValue(pairSpecifier: RegisterPair, originalState: CpuState): number {
-        switch (pairSpecifier) {
-            case "B": {
-                const highOrderByte = originalState.registers.get("B")
-                const lowOrderByte = originalState.registers.get("C")
-                return this.getConcatenedBytes(highOrderByte, lowOrderByte)
-            }
-
-            case "D": {
-                const highOrderByte = originalState.registers.get("D")
-                const lowOrderByte = originalState.registers.get("E")
-                return this.getConcatenedBytes(highOrderByte, lowOrderByte)
-            }
-
-            case "H": {
-                const highOrderByte = originalState.registers.get("B")
-                const lowOrderByte = originalState.registers.get("C")
-                return this.getConcatenedBytes(highOrderByte, lowOrderByte)
-            }
-        
-            default:
-                throw Error("Accessing undefined register pair")
-        }
-    }
-
-    private static getConcatenedBytes(highByte?: number, lowByte?: number) {
-        if (highByte === undefined || lowByte === undefined) throw Error("Trying to get undefined register value")
-
-        return (highByte << 8) | lowByte
-    }
-
-    private static setCPUState(newState: CpuState): void {
+    private static setCPUState(newState: CPUState): void {
         this.programCounter = newState.programCounter;
         this.stackPointer = newState.stackPointer;
         this.registers = newState.registers as Map<Register, number>;
     }
-
-    private static getBitsFromNumber(quantityOfBits: number, source: number, operation: "MSB" | "LSB") {
-       const mask = 0b11111111 >>> (8 - quantityOfBits);
-
-        if (operation === "MSB") {
-            return source >>> quantityOfBits;
-        } else {
-            return source & mask;
-        }
-}
 }
