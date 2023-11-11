@@ -1,4 +1,4 @@
-export interface CpuState {
+export interface CPUState {
     programCounter: number;
     stackPointer: number;
     registers: Map<keyof typeof Register, number>;
