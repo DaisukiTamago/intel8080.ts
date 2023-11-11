@@ -6,11 +6,11 @@ import { executeOpcode } from "./executor"
 
 // for reference https://en.wikipedia.org/wiki/Intel_8080
 export class CPU {
-	private static rom: Uint8Array | undefined
-	private static programCounter: number = 0x0000
-	private static stackPointer: number = 0x0000
-	private static flags = new Map(Object.entries({ Z: 0b0, S: 0b0, P: 0b0, CY: 0b0, AC: 0b0 }))
-	private static registers: Map<Register, number> = new Map(Object.entries({
+	private memory: Uint8Array | undefined
+	private programCounter: number = 0x0000
+	private stackPointer: number = 0x0000
+	private flags = new Map(Object.entries({ Z: 0b0, S: 0b0, P: 0b0, CY: 0b0, AC: 0b0 }))
+	private registers: Map<Register, number> = new Map(Object.entries({
 		[Register.B]: 0x00,
 		[Register.C]: 0x00,
 		[Register.D]: 0x00,
@@ -20,30 +20,28 @@ export class CPU {
 		[Register.A]: 0x00,
 	}) as [Register, number][])
 
-	static async load(romPath: string): Promise<void> {
+	async load(romPath: string): Promise<void> {
 		const romBuffer = await readFile(romPath)
-		this.rom = new Uint8Array(romBuffer)
+		this.memory = new Uint8Array(romBuffer)
 	}
 
-	static run() {
-		if (!this.rom) {
+	run() {
+		if (!this.memory) {
 			throw Error("ROM not loaded")
 		}
 
-		while (this.rom) {
-			if (this.programCounter >= this.rom.length) {
+		while (this.memory) {
+			if (this.programCounter >= this.memory.length) {
 				break
 			}
             
 			this.executeCycle()
 		}
-
-		console.log("Program finished")
 	}
 
-	private static executeCycle(): void {
+	private executeCycle(): void {
 		const currentInstruction = this.fetch()
-		const { programCounter, stackPointer, registers, flags, rom } = this
+		const { programCounter, stackPointer, registers, flags, memory: rom } = this
 
 		if (!rom) throw Error("ROM not loaded")
 
@@ -62,17 +60,27 @@ export class CPU {
 		this.setCPUState(newState)
 	}
 
-	private static fetch(): Opcode {
-		return Translator.decode(this.rom![this.programCounter], this.programCounter,this.rom!)
+	private fetch(): Opcode {
+		return Translator.decode(this.memory![this.programCounter], this.programCounter,this.memory!)
 	}
 
-	private static executeInstruction(opcode: Opcode, originalState: CPUState): CPUState {
+	private executeInstruction(opcode: Opcode, originalState: CPUState): CPUState {
 		return executeOpcode(opcode, originalState)
 	}
 
-	private static setCPUState(newState: CPUState): void {
+	private setCPUState(newState: CPUState): void {
 		this.programCounter = newState.programCounter
 		this.stackPointer = newState.stackPointer
 		this.registers = newState.registers as Map<Register, number>
+	}
+
+	get state(): CPUState {
+		return {
+			programCounter: this.programCounter,
+			stackPointer: this.stackPointer,
+			registers: this.registers,
+			flags: this.flags,
+			memory: this.memory!,
+		}
 	}
 }
