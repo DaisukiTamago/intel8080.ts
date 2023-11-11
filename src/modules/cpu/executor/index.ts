@@ -10,7 +10,7 @@ export function executeOpcode(opcode: Opcode, initialState: CPUState): CPUState 
 	const opcodeHandler = opcodeHandlers[opcode.code]
 
 	if(!opcodeHandler) {
-		throw Error("Opcode not implemented")
+		throw Error(`Opcode not implemented ${opcode.code.toString(16)}`)
 	}
 
 	return opcodeHandler(initialState, opcode)
