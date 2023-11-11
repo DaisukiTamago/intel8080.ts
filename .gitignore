@@ -1,3 +1,5 @@
 node_modules
 roms
 yarn-error.log
+
+coverage
