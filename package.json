@@ -8,7 +8,7 @@
   "scripts": {
     "disassemble": "ts-node ./src/modules/disassembler/index.ts ./roms/invaders",
     "execute": "ts-node ./src/index.ts",
-    "test": "jest"
+    "test": "jest --coverage"
   },
   "devDependencies": {
     "@types/jest": "^29.5.8",

@@ -1,6 +1,6 @@
 import { RegisterPair, Register, CPUState } from "../types"
 
-export function setValueIntoRegisterPair(pairSpecifier: RegisterPair, value: [firstRegister: number, secondRegister: number] | number, originalState: CPUState) {
+export function setValueIntoRegisterPair(pairSpecifier: RegisterPair, value: [firstRegister: number, secondRegister: number] | number, originalState: CPUState): CPUState {
 	const newState = { ...originalState }
 
 	const affectedRegisters: { higher?: keyof typeof Register, lower?: keyof typeof Register } = {}
@@ -46,8 +46,9 @@ export function getBitsFromNumber(quantityOfBits: number, source: number, operat
 	}
 }
 
-export function getConcatenedBytes(highByte?: number, lowByte?: number) {
+export function getConcatenatedBytes(highByte?: number, lowByte?: number) {
 	if (highByte === undefined || lowByte === undefined) throw Error("Trying to get undefined register value")
+	if ([highByte, lowByte].some(byte => byte > 0xFF)) throw Error("Attempting to concatenate bytes with more than 8 bits, likely a bug")
 
 	return (highByte << 8) | lowByte
 }
@@ -57,19 +58,19 @@ export function getRegisterPairValue(pairSpecifier: RegisterPair, originalState:
 	case "B": {
 		const highOrderByte = originalState.registers.get("B")
 		const lowOrderByte = originalState.registers.get("C")
-		return getConcatenedBytes(highOrderByte, lowOrderByte)
+		return getConcatenatedBytes(highOrderByte, lowOrderByte)
 	}
 
 	case "D": {
 		const highOrderByte = originalState.registers.get("D")
 		const lowOrderByte = originalState.registers.get("E")
-		return getConcatenedBytes(highOrderByte, lowOrderByte)
+		return getConcatenatedBytes(highOrderByte, lowOrderByte)
 	}
 
 	case "H": {
 		const highOrderByte = originalState.registers.get("H")
 		const lowOrderByte = originalState.registers.get("L")
-		return getConcatenedBytes(highOrderByte, lowOrderByte)
+		return getConcatenatedBytes(highOrderByte, lowOrderByte)
 	}
     
 	default:
@@ -81,7 +82,7 @@ export function getRegisterPairValue(pairSpecifier: RegisterPair, originalState:
 export function getRegisterValue(registerIdentifier: Register, originalState: CPUState) {
 	const value = originalState.registers.get(registerIdentifier)
     
-	if(value === undefined) throw Error("Attempting to access undefined register")
+	if (value === undefined) throw Error("Attempting to access undefined register")
 
 	return value 
 }

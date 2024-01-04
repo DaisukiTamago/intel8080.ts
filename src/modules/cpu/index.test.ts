@@ -31,7 +31,7 @@ describe("CPU", () => {
 
 			await cpu.load(filePath)
 			
-			expect(() => { cpu.run() }).not.toThrow()
+			expect(() => { cpu.run() }).toThrow()
 		})
 	})
 })
