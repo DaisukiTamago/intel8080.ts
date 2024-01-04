@@ -1,4 +1,4 @@
-import { RegisterPair, Register, CPUState } from "../types"
+import {CPUState, Register, RegisterPair} from "../types"
 
 export function setValueIntoRegisterPair(pairSpecifier: RegisterPair, value: [firstRegister: number, secondRegister: number] | number, originalState: CPUState): CPUState {
 	const newState = { ...originalState }
@@ -46,8 +46,7 @@ export function getBitsFromNumber(quantityOfBits: number, source: number, operat
 	}
 }
 
-export function getConcatenatedBytes(highByte?: number, lowByte?: number) {
-	if (highByte === undefined || lowByte === undefined) throw Error("Trying to get undefined register value")
+export function getConcatenatedBytes(highByte: number, lowByte: number) {
 	if ([highByte, lowByte].some(byte => byte > 0xFF)) throw Error("Attempting to concatenate bytes with more than 8 bits, likely a bug")
 
 	return (highByte << 8) | lowByte
@@ -56,20 +55,20 @@ export function getConcatenatedBytes(highByte?: number, lowByte?: number) {
 export function getRegisterPairValue(pairSpecifier: RegisterPair, originalState: CPUState): number {
 	switch (pairSpecifier) {
 	case "B": {
-		const highOrderByte = originalState.registers.get("B")
-		const lowOrderByte = originalState.registers.get("C")
+		const highOrderByte = getRegisterValue(Register.B, originalState)
+		const lowOrderByte = getRegisterValue(Register.C, originalState)
 		return getConcatenatedBytes(highOrderByte, lowOrderByte)
 	}
 
 	case "D": {
-		const highOrderByte = originalState.registers.get("D")
-		const lowOrderByte = originalState.registers.get("E")
+		const highOrderByte = getRegisterValue(Register.D, originalState)
+		const lowOrderByte = getRegisterValue(Register.E, originalState)
 		return getConcatenatedBytes(highOrderByte, lowOrderByte)
 	}
 
 	case "H": {
-		const highOrderByte = originalState.registers.get("H")
-		const lowOrderByte = originalState.registers.get("L")
+		const highOrderByte = getRegisterValue(Register.H, originalState)
+		const lowOrderByte = getRegisterValue(Register.L, originalState)
 		return getConcatenatedBytes(highOrderByte, lowOrderByte)
 	}
     

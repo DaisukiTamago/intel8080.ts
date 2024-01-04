@@ -13,11 +13,6 @@ describe("CPU Helpers", () => {
 			expect(getConcatenatedBytes(0x0, 0xF)).toEqual(0x0F)
 		})
 
-		it("should throw an error if either byte is undefined", () => {
-			expect(() => getConcatenatedBytes(undefined, 0)).toThrow()
-			expect(() => getConcatenatedBytes(0, undefined)).toThrow()
-		})
-
 		it("should throw an error if either byte is greater than 8 bits", () => {
 			expect(() => getConcatenatedBytes(0xFFFF, 0)).toThrow()
 			expect(() => getConcatenatedBytes(0, 0xFFFF)).toThrow()
