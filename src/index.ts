@@ -4,7 +4,7 @@ import { CPU } from "./modules/cpu"
 import { Translator } from "./modules/translator";
 
 (async () => {
-	const romPath = "./roms/invaders" || process.argv[2]
+	const romPath =  process.argv[2] || "./roms/invaders"
 	Translator.loadOpcodes()
 	
 	const INTEL_8080 = new CPU()
