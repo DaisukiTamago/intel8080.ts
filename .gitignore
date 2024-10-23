@@ -2,4 +2,7 @@ node_modules
 roms
 yarn-error.log
 
+.idea
+.vscode
+
 coverage
