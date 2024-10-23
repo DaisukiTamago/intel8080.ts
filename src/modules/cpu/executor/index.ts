@@ -1,6 +1,11 @@
 import { Translator } from "../../translator"
 import { Opcode } from "../../translator/types"
-import { setValueIntoRegisterPair, getRegisterPairValue, getRegisterValue, getBitsFromNumber } from "../helpers"
+import {
+	setValueIntoRegisterPair,
+	getRegisterPairValue,
+	getRegisterValue,
+	getBitsFromNumber
+} from "../helpers"
 import { CPUState, Register } from "../types"
 import { OpcodeHandler } from "./types"
 
@@ -9,7 +14,7 @@ const opcodeHandlers: Record<Opcode["code"], OpcodeHandler> = {}
 export function executeOpcode(opcode: Opcode, initialState: CPUState): CPUState {
 	const opcodeHandler = opcodeHandlers[opcode.code]
 
-	if(!opcodeHandler) {
+	if (!opcodeHandler) {
 		throw Error(`Opcode not implemented ${opcode.code.toString(16)}`)
 	}
 
@@ -26,7 +31,6 @@ opcodeHandlers[0x00] = function NOP(initialState) {
 	return initialState
 }
 
-
 opcodeHandlers[0x06] = function MVI_B_D8(initialState, opcode) {
 	initialState.registers.set("B", Translator.getOpcodeSingleOperand(opcode))
 
@@ -40,12 +44,12 @@ opcodeHandlers[0x11] = function LXI_D_D16(initialState, opcode) {
 }
 
 opcodeHandlers[0x13] = function INX_D(initialState) {
-	const pairValue = getRegisterPairValue(Register.D , initialState)
+	const pairValue = getRegisterPairValue(Register.D, initialState)
 
 	return setValueIntoRegisterPair("D", pairValue + 1, initialState)
 }
 
-opcodeHandlers[0x1A] = function LDAX_D(initialState) {
+opcodeHandlers[0x1a] = function LDAX_D(initialState) {
 	const memoryAddress = getRegisterPairValue(Register.D, initialState)
 	const value = initialState.memory[memoryAddress]
 
@@ -73,7 +77,7 @@ opcodeHandlers[0x31] = function LXI_SP_D16(initialState, opcode) {
 }
 
 opcodeHandlers[0x77] = function MOV_M_A(initialState) {
-	const accumulatorRegisterValue = getRegisterValue(Register.A, initialState) 
+	const accumulatorRegisterValue = getRegisterValue(Register.A, initialState)
 	const targetMemoryAddress = getRegisterPairValue("H", initialState)
 
 	initialState.memory[targetMemoryAddress] = accumulatorRegisterValue
@@ -83,9 +87,9 @@ opcodeHandlers[0x77] = function MOV_M_A(initialState) {
 
 opcodeHandlers[0xc3] = function JMP(initialState, opcode) {
 	const jumpAddress = Translator.getOpcodeOperandsAsAddress(opcode)
-    
+
 	initialState.programCounter = jumpAddress
-    
+
 	return initialState
 }
 
@@ -100,9 +104,6 @@ opcodeHandlers[0xcd] = function CALL(initialState, opcode) {
 
 	initialState.programCounter = subroutineAddress // program now will execute the routine
 	initialState.stackPointer -= 2 // before jumping into the subroutine, sets the stackpointer to the return address
-    
+
 	return initialState
 }
-
-
-

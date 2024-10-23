@@ -10,15 +10,17 @@ export class CPU {
 	private programCounter: number = 0x0000
 	private stackPointer: number = 0x0000
 	private flags = new Map(Object.entries({ Z: 0b0, S: 0b0, P: 0b0, CY: 0b0, AC: 0b0 }))
-	private registers: Map<Register, number> = new Map(Object.entries({
-		[Register.B]: 0x00,
-		[Register.C]: 0x00,
-		[Register.D]: 0x00,
-		[Register.E]: 0x00,
-		[Register.H]: 0x00,
-		[Register.L]: 0x00,
-		[Register.A]: 0x00,
-	}) as [Register, number][])
+	private registers: Map<Register, number> = new Map(
+		Object.entries({
+			[Register.B]: 0x00,
+			[Register.C]: 0x00,
+			[Register.D]: 0x00,
+			[Register.E]: 0x00,
+			[Register.H]: 0x00,
+			[Register.L]: 0x00,
+			[Register.A]: 0x00
+		}) as [Register, number][]
+	)
 
 	async load(romPath: string): Promise<void> {
 		const romBuffer = await readFile(romPath)
@@ -34,7 +36,7 @@ export class CPU {
 			if (this.programCounter >= this.memory.length) {
 				break
 			}
-            
+
 			this.executeCycle()
 		}
 	}
@@ -50,18 +52,20 @@ export class CPU {
 			stackPointer,
 			registers,
 			flags,
-			memory: rom,
+			memory: rom
 		})
 
 		// If the executed instruction did not changed the program counter, we add the actual instruction size to it
 		// so in the next cycle, the program counter will be pointing to the correct next instruction
-		this.programCounter === newState.programCounter && (newState.programCounter += currentInstruction.size)
+		if (this.programCounter === newState.programCounter) {
+			newState.programCounter += currentInstruction.size
+		}
 
 		this.setCPUState(newState)
 	}
 
 	private fetch(): Opcode {
-		return Translator.decode(this.memory![this.programCounter], this.programCounter,this.memory!)
+		return Translator.decode(this.memory![this.programCounter], this.programCounter, this.memory!)
 	}
 
 	private executeInstruction(opcode: Opcode, originalState: CPUState): CPUState {
@@ -80,7 +84,7 @@ export class CPU {
 			stackPointer: this.stackPointer,
 			registers: this.registers,
 			flags: this.flags,
-			memory: this.memory!,
+			memory: this.memory!
 		}
 	}
 }

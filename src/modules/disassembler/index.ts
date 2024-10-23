@@ -37,21 +37,25 @@ class Disassembler {
 
 			const instructionAddress = this.programCounter.toString(16).padStart(4, "0")
 			const instructionData = dataBytes.map(value => value.toString(16).padStart(2, "0"))
-			const instructionCode = opcode.code.toString(16).padStart(2, "0").concat(" ".repeat(instructionSpacesPadding))
+			const instructionCode = opcode.code
+				.toString(16)
+				.padStart(2, "0")
+				.concat(" ".repeat(instructionSpacesPadding))
 
 			disassembledInstruction.push(instructionAddress, instructionCode)
-			dataBytes.length >= 1 && disassembledInstruction.push(instructionData.join(" "))
+			if (dataBytes.length >= 1) disassembledInstruction.push(instructionData.join(" "))
 			disassembledInstruction.push(opcode.instruction)
 
 			disassembledInstructions.push(disassembledInstruction.join(" "))
 
-			opcode.size > 0 ? this.programCounter += opcode.size : this.programCounter++
+			if (opcode.size > 0) this.programCounter += opcode.size
+			else this.programCounter++
 
 			instruction = this.rom[this.programCounter]
 		}
 
 		await writeFile(`${this.filePath}.asm`, disassembledInstructions.join("\n"))
-		return        
+		return
 	}
 }
 

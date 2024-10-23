@@ -1,4 +1,4 @@
-import {CPUState} from "../../src/modules/cpu/types"
+import { CPUState } from "../../src/modules/cpu/types"
 
 export const generateCPUState = (): CPUState => {
 	return {

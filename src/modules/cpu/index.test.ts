@@ -12,27 +12,30 @@ describe("CPU", () => {
 
 	describe("Memory Routines", () => {
 		it("should load the ROM file into memory", async () => {
-			const filePath = resolve(__dirname, "../../../roms/invaders") 
+			const filePath = resolve(__dirname, "../../../roms/invaders")
 
 			await cpu.load(filePath)
-			
+
 			expect(cpu.state.memory).toBeDefined()
 		})
 
 		it("should throw an error if running without loaded program in memory", () => {
 			expect(cpu.state.memory).toBeUndefined()
-			expect(() => { cpu.run() }).toThrow()
+			expect(() => {
+				cpu.run()
+			}).toThrow()
 		})
 	})
 
 	describe("CPU Routines", () => {
 		it("should be able to run rom", async () => {
-			const filePath = resolve(__dirname, "../../../roms/invaders") 
+			const filePath = resolve(__dirname, "../../../roms/invaders")
 
 			await cpu.load(filePath)
-			
-			expect(() => { cpu.run() }).toThrow()
+
+			expect(() => {
+				cpu.run()
+			}).toThrow()
 		})
 	})
 })
-
